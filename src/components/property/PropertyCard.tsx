@@ -204,5 +204,6 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
         </div>
       </div>
     </div>
+    </Link>
   );
 }
