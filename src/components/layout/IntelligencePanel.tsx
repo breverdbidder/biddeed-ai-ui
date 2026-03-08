@@ -1,5 +1,6 @@
 'use client';
 // src/components/layout/IntelligencePanel.tsx
+// FIXED: CP-01 scroll, CP-03 tab switching, CP-04 layout
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -49,11 +50,9 @@ const MOCK_AGENTS = [
 ];
 
 export function IntelligencePanel() {
-  // useAuctions returns: rows, enriched, filtered, loading, error, filters, setFilters, auctionDates, stats
   const { enriched, loading: propsLoading } = useAuctions();
   const [, setSelectedPropertyId] = useState<string | null>(null);
 
-  // Map enriched rows → MapProperty shape
   const mapProperties = enriched.map((p) => ({
     id: p.id,
     case_number: p.case_number ?? '',
@@ -73,7 +72,9 @@ export function IntelligencePanel() {
 
   return (
     <div className="flex flex-col h-full bg-[#020617]">
+      {/* CP-03 FIX: Tabs wrapper must be flex-col h-full so TabsContent gets remaining space */}
       <Tabs defaultValue="properties" className="flex flex-col h-full">
+        {/* Tab bar - fixed height */}
         <div className="flex-shrink-0 bg-[#0f172a] border-b border-slate-800 px-4 pt-2">
           <TabsList className="bg-transparent gap-0 h-auto">
             <TabsTrigger
@@ -88,60 +89,65 @@ export function IntelligencePanel() {
                 </span>
               )}
             </TabsTrigger>
-
-            <TabsTrigger
-              value="map"
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#F59E0B] data-[state=active]:text-[#F59E0B] text-slate-500 hover:text-slate-300 transition-colors bg-transparent"
-            >
+            <TabsTrigger value="map" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#F59E0B] data-[state=active]:text-[#F59E0B] text-slate-500 hover:text-slate-300 transition-colors bg-transparent">
               <Map className="w-3.5 h-3.5" />
               Map
-              <span className="ml-1 text-[9px] bg-[#F59E0B]/20 text-[#F59E0B] px-1.5 py-0.5 rounded-full font-bold">
-                NEW
-              </span>
+              <span className="ml-1 text-[9px] bg-[#F59E0B]/20 text-[#F59E0B] px-1.5 py-0.5 rounded-full font-bold">NEW</span>
             </TabsTrigger>
-
-            <TabsTrigger
-              value="pipeline"
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#F59E0B] data-[state=active]:text-[#F59E0B] text-slate-500 hover:text-slate-300 transition-colors bg-transparent"
-            >
+            <TabsTrigger value="pipeline" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#F59E0B] data-[state=active]:text-[#F59E0B] text-slate-500 hover:text-slate-300 transition-colors bg-transparent">
               <GitBranch className="w-3.5 h-3.5" />
               Pipeline
             </TabsTrigger>
-
-            <TabsTrigger
-              value="agents"
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#F59E0B] data-[state=active]:text-[#F59E0B] text-slate-500 hover:text-slate-300 transition-colors bg-transparent"
-            >
+            <TabsTrigger value="agents" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#F59E0B] data-[state=active]:text-[#F59E0B] text-slate-500 hover:text-slate-300 transition-colors bg-transparent">
               <Bot className="w-3.5 h-3.5" />
               Agents
             </TabsTrigger>
-
-            <TabsTrigger
-              value="reports"
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#F59E0B] data-[state=active]:text-[#F59E0B] text-slate-500 hover:text-slate-300 transition-colors bg-transparent"
-            >
+            <TabsTrigger value="reports" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-[#F59E0B] data-[state=active]:text-[#F59E0B] text-slate-500 hover:text-slate-300 transition-colors bg-transparent">
               <FileText className="w-3.5 h-3.5" />
               Reports
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="properties" className="flex-1 overflow-hidden m-0 p-0">
+        {/*
+          CP-01 + CP-03 FIX:
+          - Each TabsContent uses min-h-0 to allow flex shrink in column layout
+          - Properties tab: flex-1 overflow-hidden (PropertyGrid handles its own scroll)
+          - Map tab: NO flex-col on TabsContent itself (was causing hidden override)
+            Instead, inner div handles flex layout
+          - data-[state=inactive]:hidden ensures inactive tabs are display:none
+        */}
+        <TabsContent
+          value="properties"
+          className="flex-1 min-h-0 m-0 p-0 data-[state=inactive]:hidden"
+        >
           <PropertyGrid />
         </TabsContent>
 
-        <TabsContent value="map" className="flex-1 overflow-hidden m-0 p-0 flex flex-col">
-          <MapTab
-            properties={mapProperties}
-            onPropertySelect={(p) => setSelectedPropertyId(p.id)}
-          />
+        <TabsContent
+          value="map"
+          className="flex-1 min-h-0 m-0 p-0 data-[state=inactive]:hidden"
+        >
+          {/* CP-03: flex-col moved inside TabsContent to inner wrapper */}
+          <div className="flex flex-col h-full">
+            <MapTab
+              properties={mapProperties}
+              onPropertySelect={(p) => setSelectedPropertyId(p.id)}
+            />
+          </div>
         </TabsContent>
 
-        <TabsContent value="pipeline" className="flex-1 overflow-auto m-0 p-4">
+        <TabsContent
+          value="pipeline"
+          className="flex-1 min-h-0 overflow-auto m-0 p-4 data-[state=inactive]:hidden"
+        >
           <PipelineProgress stages={MOCK_STAGES} currentStage="lien_priority" />
         </TabsContent>
 
-        <TabsContent value="agents" className="flex-1 overflow-auto m-0 p-4">
+        <TabsContent
+          value="agents"
+          className="flex-1 min-h-0 overflow-auto m-0 p-4 data-[state=inactive]:hidden"
+        >
           <AgentActivityPanel
             agents={MOCK_AGENTS}
             activeAgentId={3}
@@ -149,7 +155,10 @@ export function IntelligencePanel() {
           />
         </TabsContent>
 
-        <TabsContent value="reports" className="flex-1 overflow-auto m-0 p-4">
+        <TabsContent
+          value="reports"
+          className="flex-1 min-h-0 overflow-auto m-0 p-4 data-[state=inactive]:hidden"
+        >
           <div className="flex flex-col items-center justify-center h-full text-slate-500">
             <FileText className="w-10 h-10 mb-3 opacity-20" />
             <p className="text-sm font-medium">Report Generation</p>
