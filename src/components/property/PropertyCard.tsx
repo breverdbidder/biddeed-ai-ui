@@ -46,23 +46,25 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
       {/* ── Photo ── */}
       <div className="relative h-44 bg-slate-900">
         {auction.photo_url ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={auction.photo_url}
-            alt={shortAddress}
-            className="absolute inset-0 w-full h-full object-cover brightness-75"
-            loading="lazy"
-            onError={(e) => {
-              // CP-02: Fallback on BCPAO hotlink block
-              const target = e.currentTarget;
-              target.style.display = 'none';
-              const fallback = target.nextElementSibling;
-              if (fallback) (fallback as HTMLElement).style.display = 'flex';
-            }}
-          />
-          <div className="w-full h-full items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-[#1E3A5F]/40 hidden">
-            <Home className="w-10 h-10 text-slate-600" />
-          </div>
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={auction.photo_url}
+              alt={shortAddress}
+              className="absolute inset-0 w-full h-full object-cover brightness-75"
+              loading="lazy"
+              onError={(e) => {
+                // CP-02: Fallback on BCPAO hotlink block
+                const target = e.currentTarget;
+                target.style.display = 'none';
+                const fallback = target.nextElementSibling;
+                if (fallback) (fallback as HTMLElement).style.display = 'flex';
+              }}
+            />
+            <div className="w-full h-full items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-[#1E3A5F]/40 hidden">
+              <Home className="w-10 h-10 text-slate-600" />
+            </div>
+          </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-navy/40">
             <Home className="w-10 h-10 text-slate-600" />
