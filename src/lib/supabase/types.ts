@@ -28,6 +28,8 @@ export interface AuctionRow {
   zip: string | null;
   parcel_id: string | null;
   bcpao_enriched: boolean;
+  latitude: number | null;
+  longitude: number | null;
   data_source: string | null;
   auction_type: string | null;
   scraped_at: string | null;
