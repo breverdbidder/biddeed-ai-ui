@@ -29,6 +29,9 @@ const CHAT_API_URL = process.env.NEXT_PUBLIC_CHAT_API_URL || '/api/chat';
  * Provides streaming support and tool call visualization
  */
 export function useBidDeedRuntime() {
+  // Stable thread_id for conversation continuity
+  const threadId = useMemo(() => crypto.randomUUID(), []);
+
   const threadState: ThreadState = useMemo(
     () => ({
       messages: [],
@@ -49,7 +52,7 @@ export function useBidDeedRuntime() {
             messages: [{ role: 'user', content: message }],
             config: {
               configurable: {
-                thread_id: crypto.randomUUID(),
+                thread_id: threadId,
               },
             },
           }),
@@ -158,7 +161,7 @@ export function detectIntent(message: string): {
     return {
       type: 'pipeline_batch',
       auctionDate: dateMatch
-        ? `Dec ${dateMatch[1]}, 2025`
+        ? `Dec ${dateMatch[1]}, ${new Date().getFullYear()}`
         : undefined,
     };
   }
