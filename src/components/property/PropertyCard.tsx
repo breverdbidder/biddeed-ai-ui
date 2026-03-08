@@ -4,6 +4,7 @@
 
 // CP-02 FIX: Replaced next/image with standard <img> + onError fallback
 // BCPAO blocks cross-origin hotlinking; next/image makes it worse
+import Link from 'next/link';
 import { Home, ExternalLink } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { DecisionBadge } from './DecisionBadge';
@@ -36,10 +37,11 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
   const sourceUrl = auction.realforeclose_url ?? auction.clerk_url ?? null;
 
   return (
+    <Link href={`/biddeed-ai-ui/property/?id=${auction.id}`} className="block">
     <div className={cn(
       'bg-slate-800 rounded-xl border-l-4 overflow-hidden shadow-lg',
       'hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200',
-      'border border-slate-700 hover:border-amber-500/30',
+      'border border-slate-700 hover:border-amber-500/30 cursor-pointer',
       borderColor,
       className,
     )}>
