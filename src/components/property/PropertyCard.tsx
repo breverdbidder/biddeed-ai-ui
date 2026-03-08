@@ -53,6 +53,17 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
       )}>
       {/* ── Photo ── */}
       <div className="relative h-44 bg-slate-900">
+        {/* CP-10: Auction Status Badge */}
+        {auction.auction_status === 'sold' && (
+          <div className="absolute top-2 left-14 z-20 bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded font-mono shadow-lg">
+            SOLD {auction.sold_amount ? `$${(auction.sold_amount/1000).toFixed(0)}K` : ''}
+          </div>
+        )}
+        {auction.auction_status === 'cancelled' && (
+          <div className="absolute top-2 left-14 z-20 bg-red-700 text-white text-[10px] font-bold px-2 py-1 rounded font-mono shadow-lg">
+            CANCELLED
+          </div>
+        )}
         {auction.photo_url ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
