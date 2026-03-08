@@ -41,11 +41,11 @@ const MOCK_STAGES = [
 ];
 
 const MOCK_AGENTS = [
-  { id: 1, name: 'Property Scout',   tier: 1 as const, status: 'active'  as const, tasksCompleted: 47 },
-  { id: 2, name: 'Title Searcher',   tier: 2 as const, status: 'active'  as const, tasksCompleted: 23 },
-  { id: 3, name: 'Lien Analyst',     tier: 2 as const, status: 'waiting' as const, tasksCompleted: 12 },
-  { id: 4, name: 'ML Predictor',     tier: 3 as const, status: 'idle'    as const, tasksCompleted: 8  },
-  { id: 5, name: 'Report Generator', tier: 3 as const, status: 'idle'    as const, tasksCompleted: 15 },
+  { id: 1, name: 'Property Scout',   tier: 1 as const, icon: '🔍', status: 'completed' as const },
+  { id: 2, name: 'Title Searcher',   tier: 1 as const, icon: '📜', status: 'completed' as const },
+  { id: 3, name: 'Lien Analyst',     tier: 2 as const, icon: '⚖️', status: 'active'    as const },
+  { id: 4, name: 'ML Predictor',     tier: 3 as const, icon: '🧠', status: 'idle'      as const },
+  { id: 5, name: 'Report Generator', tier: 3 as const, icon: '📊', status: 'idle'      as const },
 ];
 
 export function IntelligencePanel() {
@@ -61,13 +61,9 @@ export function IntelligencePanel() {
     city: p.city ?? '',
     state: 'FL',
     zip_code: p.zip ?? undefined,
-    // Recommendation comes from intel layer
     recommendation: p.intel.recommendation,
-    // Max bid from intel
     max_bid_calculated: p.intel.maxBid,
-    // ml_probability: use mlScore / 100 as proxy until XGBoost wired
     ml_probability: p.intel.mlScore / 100,
-    // lat/lng: not yet in AuctionRow schema (coming in PRS V17)
     latitude: null as number | null,
     longitude: null as number | null,
     judgment_amount: p.opening_bid,
@@ -146,7 +142,11 @@ export function IntelligencePanel() {
         </TabsContent>
 
         <TabsContent value="agents" className="flex-1 overflow-auto m-0 p-4">
-          <AgentActivityPanel agents={MOCK_AGENTS} />
+          <AgentActivityPanel
+            agents={MOCK_AGENTS}
+            activeAgentId={3}
+            completedAgentIds={[1, 2]}
+          />
         </TabsContent>
 
         <TabsContent value="reports" className="flex-1 overflow-auto m-0 p-4">
