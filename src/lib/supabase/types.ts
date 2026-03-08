@@ -32,6 +32,10 @@ export interface AuctionRow {
   longitude: number | null;
   data_source: string | null;
   auction_type: string | null;
+  auction_status: 'upcoming' | 'sold' | 'cancelled' | 'completed' | null;
+  sold_amount: number | null;
+  winning_bidder: string | null;
+  sale_result_date: string | null;
   scraped_at: string | null;
 }
 
