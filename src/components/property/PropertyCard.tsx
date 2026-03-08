@@ -1,185 +1,192 @@
 'use client';
+// src/components/property/PropertyCard.tsx
+// Accepts raw AuctionRow — intelligence computed internally via useAuctions hook
 
 import Image from 'next/image';
-import { MapPin, Home, DollarSign, Scale, TrendingUp, Percent } from 'lucide-react';
+import { Home, ExternalLink } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { DecisionBadge } from './DecisionBadge';
+import { formatDollar, formatDate } from '@/lib/auction-intelligence';
+import type { AuctionWithIntel } from '@/hooks/useAuctions';
 
 interface PropertyCardProps {
-  property: {
-    id: string;
-    address: string;
-    city: string;
-    zip: string;
-    photoUrl?: string;
-    openingBid: number;
-    finalJudgment: number;
-    maxBid: number;
-    mlScore: number;
-    decision: 'BID' | 'REVIEW' | 'SKIP';
-    arv?: number;
-    bidJudgmentRatio: number;
-  };
+  auction: AuctionWithIntel;
+  className?: string;
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+const ML_COLORS = {
+  HIGH: { bar: 'bg-green-500', text: 'text-green-400' },
+  MED:  { bar: 'bg-amber-500', text: 'text-amber-400' },
+  LOW:  { bar: 'bg-slate-500', text: 'text-slate-400' },
+};
+
+export function PropertyCard({ auction, className }: PropertyCardProps) {
+  const { intel, shortAddress, cityZip } = auction;
+  const { recommendation, maxBid, arv, repairs, mlScore, mlConfidence, daysUntilAuction } = intel;
+  const isFC = auction.sale_type === 'foreclosure';
+
   const borderColor = {
-    BID: 'border-green-500',
-    REVIEW: 'border-amber-500',
-    SKIP: 'border-red-500',
-  }[property.decision];
+    BID:    'border-l-green-500',
+    REVIEW: 'border-l-amber-500',
+    SKIP:   'border-l-red-500',
+  }[recommendation];
+
+  const mlStyle = ML_COLORS[mlConfidence];
+  const sourceUrl = auction.realforeclose_url ?? auction.clerk_url ?? null;
 
   return (
-    <div
-      className={cn(
-        'bg-slate-800 rounded-xl border-l-4 overflow-hidden shadow-lg',
-        borderColor
-      )}
-    >
-      {/* Photo */}
-      <div className="relative h-48">
-        {property.photoUrl ? (
+    <div className={cn(
+      'bg-slate-800 rounded-xl border-l-4 overflow-hidden shadow-lg',
+      'hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200',
+      'border border-slate-700 hover:border-amber-500/30',
+      borderColor,
+      className,
+    )}>
+      {/* ── Photo ── */}
+      <div className="relative h-44 bg-slate-900">
+        {auction.photo_url ? (
           <Image
-            src={property.photoUrl}
-            alt={property.address}
+            src={auction.photo_url}
+            alt={shortAddress}
             fill
-            className="object-cover"
+            className="object-cover brightness-75"
             unoptimized
           />
         ) : (
-          <div className="w-full h-full bg-slate-700 flex items-center justify-center">
-            <Home className="w-12 h-12 text-slate-500" />
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-navy/40">
+            <Home className="w-10 h-10 text-slate-600" />
           </div>
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent" />
 
-        {/* Decision Badge Overlay */}
-        <div className="absolute top-3 right-3">
-          <DecisionBadge
-            decision={property.decision}
-            confidence={property.mlScore}
-            size="md"
-          />
+        {/* Type tag */}
+        <span className={cn(
+          'absolute top-2 left-2 text-[9px] font-bold px-2 py-0.5 rounded font-mono uppercase tracking-wide',
+          isFC
+            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+        )}>
+          {isFC ? '⚖ FC' : '📋 TD'}
+        </span>
+
+        {/* Decision badge */}
+        <div className="absolute top-2 right-2">
+          <DecisionBadge decision={recommendation} confidence={mlScore} size="sm" />
         </div>
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
+        {/* Days countdown */}
+        {daysUntilAuction != null && daysUntilAuction >= 0 && (
+          <span className={cn(
+            'absolute bottom-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded font-mono',
+            daysUntilAuction <= 7
+              ? 'bg-amber-500/90 text-black'
+              : 'bg-slate-900/80 text-slate-400'
+          )}>
+            {daysUntilAuction === 0 ? '⚡ TODAY' : `${daysUntilAuction}d`}
+          </span>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-4">
+      {/* ── Body ── */}
+      <div className="p-3.5">
         {/* Address */}
-        <div>
-          <h3 className="font-semibold text-white font-display text-lg">
-            {property.address}
-          </h3>
-          <div className="flex items-center gap-1 text-slate-400 text-sm">
-            <MapPin className="w-3 h-3" />
-            <span>
-              {property.city}, FL {property.zip}
-            </span>
+        <h3 className="text-sm font-bold text-white font-display leading-snug mb-0.5 truncate">
+          {shortAddress}
+        </h3>
+        <p className="text-[11px] text-slate-400 mb-3">
+          {cityZip} · {formatDate(auction.auction_date)}
+        </p>
+
+        {/* MAX BID — primary signal */}
+        <div className="bg-amber-500/8 border border-amber-500/20 rounded-lg p-2.5 mb-3">
+          <div className="text-[9px] font-bold text-amber-400 uppercase tracking-widest font-mono mb-1">
+            MAX BID · BidDeed.AI
+          </div>
+          <div className={cn(
+            'text-2xl font-bold font-mono tracking-tight',
+            maxBid > 0 ? 'text-amber-400' : 'text-slate-500'
+          )}>
+            {maxBid > 0 ? formatDollar(maxBid) : 'Needs Data'}
+          </div>
+          {arv > 0 && (
+            <div className="text-[10px] text-slate-500 mt-0.5 font-mono">
+              ARV {formatDollar(arv, true)} · Repairs ~{formatDollar(repairs, true)}
+            </div>
+          )}
+        </div>
+
+        {/* Data cells */}
+        <div className="grid grid-cols-2 gap-1.5 mb-3">
+          <div className="bg-slate-900/60 rounded p-2">
+            <div className="text-[9px] text-slate-600 uppercase tracking-wider font-mono mb-0.5">Assessed</div>
+            <div className="text-xs font-semibold text-slate-200 font-mono">
+              {auction.assessed_value ? formatCurrency(auction.assessed_value) : '—'}
+            </div>
+          </div>
+          <div className="bg-slate-900/60 rounded p-2">
+            <div className="text-[9px] text-slate-600 uppercase tracking-wider font-mono mb-0.5">
+              {auction.opening_bid ? 'Opening Bid' : auction.sqft ? 'Sqft' : 'Market Val'}
+            </div>
+            <div className="text-xs font-semibold text-slate-200 font-mono">
+              {auction.opening_bid
+                ? formatCurrency(auction.opening_bid)
+                : auction.sqft
+                ? `${auction.sqft.toLocaleString()} sf`
+                : auction.market_value
+                ? formatCurrency(auction.market_value)
+                : '—'}
+            </div>
           </div>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 gap-3">
-          <MetricBox
-            label="Opening Bid"
-            value={formatCurrency(property.openingBid)}
-            icon={DollarSign}
-          />
-          <MetricBox
-            label="Final Judgment"
-            value={formatCurrency(property.finalJudgment)}
-            icon={Scale}
-          />
-          <MetricBox
-            label="Max Bid"
-            value={formatCurrency(property.maxBid)}
-            icon={TrendingUp}
-            highlight
-          />
-          <MetricBox
-            label="ML Score"
-            value={`${property.mlScore}/100`}
-            icon={Percent}
-          />
-        </div>
-
-        {/* Bid/Judgment Ratio Bar */}
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs">
-            <span className="text-slate-400">Bid/Judgment Ratio</span>
-            <span className="text-white font-mono">
-              {property.bidJudgmentRatio}%
+        {/* ML probability bar */}
+        <div className="mb-3">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-[9px] text-slate-600 uppercase tracking-wider font-mono">3P Probability</span>
+            <span className={cn('text-[10px] font-bold font-mono', mlStyle.text)}>
+              {mlScore}%{' '}
+              <span className="text-slate-600 font-normal">{mlConfidence}</span>
             </span>
           </div>
-          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-[3px] bg-slate-700 rounded-full overflow-hidden">
             <div
-              className={cn(
-                'h-full rounded-full transition-all duration-500',
-                property.bidJudgmentRatio >= 75
-                  ? 'bg-green-500'
-                  : property.bidJudgmentRatio >= 60
-                  ? 'bg-amber-500'
-                  : 'bg-red-500'
-              )}
-              style={{
-                width: `${Math.min(property.bidJudgmentRatio, 100)}%`,
-              }}
+              className={cn('h-full rounded-full', mlStyle.bar)}
+              style={{ width: `${mlScore}%` }}
             />
           </div>
-          <div className="flex justify-between text-[10px] text-slate-500">
-            <span>SKIP</span>
-            <span>REVIEW</span>
-            <span>BID</span>
-          </div>
         </div>
 
-        {/* ARV if available */}
-        {property.arv && (
-          <div className="flex justify-between items-center pt-2 border-t border-slate-700">
-            <span className="text-sm text-slate-400">ARV (After Repair Value)</span>
-            <span className="text-sm font-semibold text-white font-mono">
-              {formatCurrency(property.arv)}
-            </span>
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-700">
+          <span className="text-[10px] text-slate-600 font-mono truncate max-w-[140px]">
+            {auction.case_number
+              ? '#' + auction.case_number.replace('05-', '').replace('-XXCA-BC', '').slice(0, 18)
+              : auction.cert_number
+              ? `Cert ${auction.cert_number}`
+              : '—'}
+          </span>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {auction.plaintiff && (
+              <span
+                className="text-[9px] text-slate-500 bg-slate-900/60 px-1.5 py-0.5 rounded max-w-[80px] truncate"
+                title={auction.plaintiff}
+              >
+                {auction.plaintiff.slice(0, 13)}{auction.plaintiff.length > 13 ? '…' : ''}
+              </span>
+            )}
+            {sourceUrl && (
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-0.5 text-[9px] text-amber-400 font-mono px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded hover:bg-amber-500/20 transition-colors"
+              >
+                {auction.realforeclose_url ? 'RF' : 'Clerk'}
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            )}
           </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function MetricBox({
-  label,
-  value,
-  icon: Icon,
-  highlight = false,
-}: {
-  label: string;
-  value: string;
-  icon: any;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        'rounded-lg p-3',
-        highlight
-          ? 'bg-blue-500/20 border border-blue-500/50'
-          : 'bg-slate-700/50'
-      )}
-    >
-      <div className="flex items-center gap-1 text-slate-400 text-xs mb-1">
-        <Icon className="w-3 h-3" />
-        {label}
-      </div>
-      <div
-        className={cn(
-          'font-mono font-semibold text-lg',
-          highlight ? 'text-blue-400' : 'text-white'
-        )}
-      >
-        {value}
+        </div>
       </div>
     </div>
   );
