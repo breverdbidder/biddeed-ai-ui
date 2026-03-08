@@ -1,6 +1,5 @@
 'use client';
 // src/components/layout/IntelligencePanel.tsx
-// Right panel: Properties | Map | Pipeline | Agents | Reports
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -11,32 +10,34 @@ import { PipelineProgress } from '@/components/pipeline/PipelineProgress';
 import { AgentActivityPanel } from '@/components/agents/AgentActivityPanel';
 import { useAuctions } from '@/hooks/useAuctions';
 
-// Dynamic import — Mapbox is client-side only
 const MapTab = dynamic(
   () => import('@/components/map/MapTab').then((m) => ({ default: m.MapTab })),
-  { ssr: false, loading: () => (
-    <div className="flex-1 flex items-center justify-center bg-[#020617]">
-      <div className="flex flex-col items-center gap-2 text-slate-500">
-        <div className="w-6 h-6 border-2 border-[#F59E0B] border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs">Loading map…</span>
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex-1 flex items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-2 text-slate-500">
+          <div className="w-6 h-6 border-2 border-[#F59E0B] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs">Loading map…</span>
+        </div>
       </div>
-    </div>
-  )}
+    ),
+  }
 );
 
 const MOCK_STAGES = [
-  { id: 'discovery',     name: 'Discovery',      status: 'completed' as const },
-  { id: 'scraping',      name: 'BECA Scraping',   status: 'completed' as const },
-  { id: 'title',         name: 'Title Search',    status: 'completed' as const },
-  { id: 'lien_priority', name: 'Lien Priority',   status: 'running'   as const },
-  { id: 'tax_certs',     name: 'Tax Certificates',status: 'pending'   as const },
-  { id: 'demographics',  name: 'Demographics',    status: 'pending'   as const },
-  { id: 'ml_score',      name: 'ML Prediction',   status: 'pending'   as const },
-  { id: 'max_bid',       name: 'Max Bid Calc',    status: 'pending'   as const },
-  { id: 'decision',      name: 'Decision',        status: 'pending'   as const },
-  { id: 'report',        name: 'Report Gen',      status: 'pending'   as const },
-  { id: 'disposition',   name: 'Disposition',     status: 'pending'   as const },
-  { id: 'archive',       name: 'Archive',         status: 'pending'   as const },
+  { id: 'discovery',     name: 'Discovery',       status: 'completed' as const },
+  { id: 'scraping',      name: 'BECA Scraping',    status: 'completed' as const },
+  { id: 'title',         name: 'Title Search',     status: 'completed' as const },
+  { id: 'lien_priority', name: 'Lien Priority',    status: 'running'   as const },
+  { id: 'tax_certs',     name: 'Tax Certificates', status: 'pending'   as const },
+  { id: 'demographics',  name: 'Demographics',     status: 'pending'   as const },
+  { id: 'ml_score',      name: 'ML Prediction',    status: 'pending'   as const },
+  { id: 'max_bid',       name: 'Max Bid Calc',     status: 'pending'   as const },
+  { id: 'decision',      name: 'Decision',         status: 'pending'   as const },
+  { id: 'report',        name: 'Report Gen',       status: 'pending'   as const },
+  { id: 'disposition',   name: 'Disposition',      status: 'pending'   as const },
+  { id: 'archive',       name: 'Archive',          status: 'pending'   as const },
 ];
 
 const MOCK_AGENTS = [
@@ -48,24 +49,29 @@ const MOCK_AGENTS = [
 ];
 
 export function IntelligencePanel() {
-  const { properties, loading: propsLoading } = useAuctions();
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  // useAuctions returns: rows, enriched, filtered, loading, error, filters, setFilters, auctionDates, stats
+  const { enriched, loading: propsLoading } = useAuctions();
+  const [, setSelectedPropertyId] = useState<string | null>(null);
 
-  // Map-compatible property shape
-  const mapProperties = properties.map((p) => ({
-    id: p.id || p.case_number,
-    case_number: p.case_number,
-    property_address: p.property_address || p.address || '',
-    city: p.city || '',
-    state: p.state,
-    zip_code: p.zip_code,
-    recommendation: p.recommendation || 'SKIP',
-    max_bid_calculated: p.max_bid_calculated ?? null,
-    ml_probability: p.ml_probability ?? null,
-    latitude: p.latitude ?? null,
-    longitude: p.longitude ?? null,
-    judgment_amount: p.judgment_amount ?? null,
-    sale_date: p.sale_date ?? null,
+  // Map enriched rows → MapProperty shape
+  const mapProperties = enriched.map((p) => ({
+    id: p.id,
+    case_number: p.case_number ?? '',
+    property_address: p.property_address ?? '',
+    city: p.city ?? '',
+    state: 'FL',
+    zip_code: p.zip ?? undefined,
+    // Recommendation comes from intel layer
+    recommendation: p.intel.recommendation,
+    // Max bid from intel
+    max_bid_calculated: p.intel.maxBid,
+    // ml_probability: use mlScore / 100 as proxy until XGBoost wired
+    ml_probability: p.intel.mlScore / 100,
+    // lat/lng: not yet in AuctionRow schema (coming in PRS V17)
+    latitude: null as number | null,
+    longitude: null as number | null,
+    judgment_amount: p.opening_bid,
+    sale_date: p.auction_date,
     sale_type: p.sale_type,
   }));
 
@@ -80,9 +86,9 @@ export function IntelligencePanel() {
             >
               <Home className="w-3.5 h-3.5" />
               Properties
-              {!propsLoading && properties.length > 0 && (
+              {!propsLoading && enriched.length > 0 && (
                 <span className="ml-1 text-[10px] bg-slate-800 px-1.5 py-0.5 rounded-full">
-                  {properties.length}
+                  {enriched.length}
                 </span>
               )}
             </TabsTrigger>
@@ -128,7 +134,7 @@ export function IntelligencePanel() {
           <PropertyGrid />
         </TabsContent>
 
-        <TabsContent value="map" className="flex-1 overflow-hidden m-0 p-0">
+        <TabsContent value="map" className="flex-1 overflow-hidden m-0 p-0 flex flex-col">
           <MapTab
             properties={mapProperties}
             onPropertySelect={(p) => setSelectedPropertyId(p.id)}
