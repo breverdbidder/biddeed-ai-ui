@@ -4,7 +4,7 @@
 
 // CP-02 FIX: Replaced next/image with standard <img> + onError fallback
 // BCPAO blocks cross-origin hotlinking; next/image makes it worse
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Home, ExternalLink } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { DecisionBadge } from './DecisionBadge';
@@ -23,6 +23,7 @@ const ML_COLORS = {
 };
 
 export function PropertyCard({ auction, className }: PropertyCardProps) {
+  const router = useRouter();
   const { intel, shortAddress, cityZip } = auction;
   const { recommendation, maxBid, arv, repairs, mlScore, mlConfidence, daysUntilAuction } = intel;
   const isFC = auction.sale_type === 'foreclosure';
@@ -37,14 +38,19 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
   const sourceUrl = auction.realforeclose_url ?? auction.clerk_url ?? null;
 
   return (
-    <Link href={`/biddeed-ai-ui/property/?id=${auction.id}`} className="block">
-    <div className={cn(
-      'bg-slate-800 rounded-xl border-l-4 overflow-hidden shadow-lg',
-      'hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200',
-      'border border-slate-700 hover:border-amber-500/30 cursor-pointer',
-      borderColor,
-      className,
-    )}>
+    <div
+      onClick={(e) => {
+        // Don't navigate if clicking an inner link
+        if ((e.target as HTMLElement).closest('a')) return;
+        router.push(`/biddeed-ai-ui/property/?id=${auction.id}`);
+      }}
+      className={cn(
+        'bg-slate-800 rounded-xl border-l-4 overflow-hidden shadow-lg',
+        'hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200',
+        'border border-slate-700 hover:border-amber-500/30 cursor-pointer',
+        borderColor,
+        className,
+      )}>
       {/* ── Photo ── */}
       <div className="relative h-44 bg-slate-900">
         {auction.photo_url ? (
@@ -204,6 +210,5 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
         </div>
       </div>
     </div>
-    </Link>
   );
 }
