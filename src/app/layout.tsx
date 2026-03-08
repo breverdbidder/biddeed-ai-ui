@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
-import localFont from 'next/font/local';
+import { GeistSans } from 'geist/font/sans';
 import './globals.css';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -12,34 +12,6 @@ const plusJakarta = Plus_Jakarta_Sans({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
-  display: 'swap',
-});
-
-// Geist font (local)
-const geist = localFont({
-  src: [
-    {
-      path: '../fonts/Geist-Regular.woff2',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/Geist-Medium.woff2',
-      weight: '500',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/Geist-SemiBold.woff2',
-      weight: '600',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/Geist-Bold.woff2',
-      weight: '700',
-      style: 'normal',
-    },
-  ],
-  variable: '--font-body',
   display: 'swap',
 });
 
@@ -56,11 +28,6 @@ export const metadata: Metadata = {
     'foreclosure investing',
   ],
   authors: [{ name: 'Everest Capital USA' }],
-  openGraph: {
-    title: 'BidDeed.AI | Foreclosure Intelligence',
-    description: 'AI-powered foreclosure auction analysis',
-    type: 'website',
-  },
 };
 
 export default function RootLayout({
@@ -71,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${plusJakarta.variable} ${geist.variable} ${jetbrainsMono.variable} font-body bg-slate-950 text-slate-100 antialiased`}
+        className={`${GeistSans.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} font-body antialiased bg-slate-950 text-slate-100`}
       >
         {children}
       </body>
