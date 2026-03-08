@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Zap, Calendar, Bell, User, ChevronDown } from 'lucide-react';
 
 export function Header() {
-  const [selectedAuction, setSelectedAuction] = useState('Dec 17, 2025');
+  const [selectedAuction, setSelectedAuction] = useState('Next Auction');
 
   return (
     <header className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700">
