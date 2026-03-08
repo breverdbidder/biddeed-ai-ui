@@ -1,9 +1,9 @@
 'use client';
 // src/components/chat/ChatPanel.tsx
-// BidDeed.AI Chat — native React UI (LangGraph in v2)
+// BidDeed.AI Chat — wired to /api/chat with Claude Sonnet SSE streaming
 
 import { useState, useRef, useEffect } from 'react';
-import { Mic, Paperclip, Send, Zap, Loader2 } from 'lucide-react';
+import { Send, Zap, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Message {
@@ -15,104 +15,245 @@ interface Message {
 const WELCOME: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: '👋 Welcome to BidDeed.AI! I\'m your foreclosure intelligence assistant powered by The Everest Ascent™ pipeline.\n\nI can help you:\n• Analyze properties from upcoming auctions\n• Run the 12-stage intelligence pipeline\n• Generate investment reports\n• Explain ML predictions and decisions\n\nWhat would you like to explore today?',
+  content: `👋 **BidDeed.AI Intelligence** — Powered by Claude Sonnet
+
+I have live access to Brevard County foreclosure data across 126 active properties.
+
+Ask me anything:
+• *"Show BID signals"* — active high-probability opportunities
+• *"Next auction dates"* — upcoming Brevard auctions
+• *"Analyze case 250697"* — full deal analysis
+• *"Is 32937 a good market?"* — ZIP-level macro context
+• *"Max bid formula explained"* — investment methodology`,
 };
 
-const SUGGESTED = ['Analyze next auction', 'Show BID signals', 'Mar 19 tax deeds', 'Pipeline status'];
+const SUGGESTED = [
+  'Show BID signals',
+  'Next auction dates',
+  'REVIEW properties',
+  'Pipeline status',
+];
 
 export function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const send = async (text: string) => {
     if (!text.trim() || loading) return;
-    setMessages((prev) => [...prev, { id: Date.now().toString(), role: 'user', content: text }]);
+    setError(null);
+
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text };
+    const assistantId = (Date.now() + 1).toString();
+    const assistantMsg: Message = { id: assistantId, role: 'assistant', content: '' };
+
+    setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setInput('');
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setMessages((prev) => [...prev, {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: 'Received: "' + text + '". LangGraph pipeline integration coming in v2. Explore the live property grid on the right \u2192',
-    }]);
-    setLoading(false);
+
+    // Build history (exclude welcome + current empty assistant)
+    const history = [...messages.slice(1), userMsg].map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+
+      if (!res.body) throw new Error('No response body');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+          try {
+            const { text, error: chunkError } = JSON.parse(data);
+            if (chunkError) throw new Error(chunkError);
+            if (text) {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, content: m.content + text } : m
+                )
+              );
+            }
+          } catch {
+            // malformed chunk — skip
+          }
+        }
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setError(msg);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? { ...m, content: `❌ Error: ${msg}\n\nCheck that ANTHROPIC_API_KEY is configured in Cloudflare Pages.` }
+            : m
+        )
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send(input);
+    }
+  };
+
+  const resetChat = () => {
+    setMessages([WELCOME]);
+    setError(null);
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-700 bg-slate-800 flex-shrink-0">
-        <Zap className="w-5 h-5 text-amber-400" />
-        <span className="font-semibold text-white font-display">BidDeed.AI Chat</span>
-        <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">LangGraph v2</span>
+    <div className="flex flex-col h-full bg-[#020617] border-r border-slate-800">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-[#0f172a] border-b border-slate-800 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-[#F59E0B]" />
+          <span className="text-sm font-semibold text-white">BidDeed Intelligence</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {loading && <Loader2 className="w-3.5 h-3.5 text-[#F59E0B] animate-spin" />}
+          <button
+            onClick={resetChat}
+            className="text-slate-500 hover:text-slate-300 transition-colors"
+            title="Reset chat"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div key={msg.id} className={cn('flex gap-3', msg.role === 'user' && 'flex-row-reverse')}>
-            <div className={cn(
-              'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm',
-              msg.role === 'assistant' ? 'bg-gradient-to-br from-blue-500 to-purple-600' : 'bg-amber-500/20 border border-amber-500/30 text-amber-400'
-            )}>
-              {msg.role === 'assistant' ? <Zap className="w-4 h-4 text-white" /> : 'A'}
-            </div>
-            <div className={cn(
-              'rounded-2xl px-4 py-3 max-w-[85%] text-sm whitespace-pre-wrap',
-              msg.role === 'assistant' ? 'bg-slate-800 text-slate-100 rounded-tl-md' : 'bg-amber-500 text-black rounded-tr-md font-medium'
-            )}>
-              {msg.content}
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 scrollbar-thin scrollbar-thumb-slate-700">
+        {messages.map((m) => (
+          <div key={m.id} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+            <div
+              className={cn(
+                'max-w-[90%] rounded-xl px-3 py-2 text-sm leading-relaxed',
+                m.role === 'user'
+                  ? 'bg-[#1E3A5F] text-white rounded-br-sm'
+                  : 'bg-[#0f172a] text-slate-200 rounded-bl-sm border border-slate-800'
+              )}
+            >
+              {m.content === '' && loading ? (
+                <span className="flex items-center gap-1 text-slate-500">
+                  <span className="w-1.5 h-1.5 bg-[#F59E0B] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-[#F59E0B] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-[#F59E0B] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </span>
+              ) : (
+                <MessageContent content={m.content} />
+              )}
             </div>
           </div>
         ))}
-        {loading && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <Loader2 className="w-4 h-4 text-white animate-spin" />
-            </div>
-            <div className="bg-slate-800 rounded-2xl rounded-tl-md px-4 py-4 flex gap-1">
-              {[0,1,2].map((i) => (
-                <div key={i} className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
-              ))}
-            </div>
-          </div>
-        )}
         <div ref={bottomRef} />
       </div>
 
-      <div className="px-4 py-2 border-t border-slate-700/50 flex-shrink-0 flex flex-wrap gap-2">
-        {SUGGESTED.map((s) => (
-          <button key={s} onClick={() => send(s)}
-            className="px-3 py-1.5 text-xs bg-slate-800 text-slate-300 rounded-full border border-slate-700 hover:border-amber-500/50 hover:text-amber-400 transition-colors">
-            {s}
-          </button>
-        ))}
-      </div>
+      {/* Suggested prompts (only when no user messages yet) */}
+      {messages.length === 1 && (
+        <div className="px-4 pb-2 flex flex-wrap gap-2">
+          {SUGGESTED.map((s) => (
+            <button
+              key={s}
+              onClick={() => send(s)}
+              className="text-xs px-3 py-1.5 rounded-full bg-[#1E3A5F]/60 text-[#F59E0B] border border-[#F59E0B]/20 hover:border-[#F59E0B]/60 transition-colors"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="p-4 border-t border-slate-700 bg-slate-900 flex-shrink-0">
-        <div className="flex items-center gap-2 bg-slate-800 rounded-xl border border-slate-700 focus-within:border-amber-500/50 transition-colors">
-          <button className="p-3"><Paperclip className="w-5 h-5 text-slate-500" /></button>
-          <input
+      {/* Input */}
+      <div className="flex-shrink-0 px-4 pb-4 pt-2 border-t border-slate-800">
+        <div className="flex items-end gap-2 bg-[#0f172a] rounded-xl border border-slate-700 focus-within:border-[#F59E0B]/50 px-3 py-2 transition-colors">
+          <textarea
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
-            placeholder="Ask BidDeed.AI..."
-            className="flex-1 bg-transparent outline-none text-white placeholder-slate-500 py-3 text-sm"
+            onKeyDown={handleKey}
+            rows={1}
+            placeholder="Ask about properties, bids, market data…"
+            className="flex-1 bg-transparent text-sm text-white placeholder-slate-500 resize-none outline-none max-h-24 scrollbar-thin"
+            style={{ lineHeight: '1.5' }}
           />
-          <button onClick={() => setIsListening(!isListening)}
-            className={cn('p-3 transition-colors', isListening ? 'text-red-400 animate-pulse' : 'text-slate-500 hover:text-slate-300')}>
-            <Mic className="w-5 h-5" />
-          </button>
-          <button onClick={() => send(input)} disabled={!input.trim() || loading}
-            className="p-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-30 rounded-r-xl transition-colors">
-            <Send className="w-5 h-5 text-black" />
+          <button
+            onClick={() => send(input)}
+            disabled={!input.trim() || loading}
+            className={cn(
+              'flex-shrink-0 p-1.5 rounded-lg transition-all',
+              input.trim() && !loading
+                ? 'bg-[#F59E0B] text-[#020617] hover:bg-[#F59E0B]/80'
+                : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+            )}
+          >
+            <Send className="w-3.5 h-3.5" />
           </button>
         </div>
-        <p className="text-xs text-slate-600 mt-2 text-center">Enter to send</p>
+        <p className="text-[10px] text-slate-600 mt-1.5 text-center">
+          Live Brevard data · Claude Sonnet · Enter to send
+        </p>
       </div>
+    </div>
+  );
+}
+
+// Simple markdown-ish renderer
+function MessageContent({ content }: { content: string }) {
+  const parts = content.split('\n');
+  return (
+    <div className="space-y-1">
+      {parts.map((line, i) => {
+        if (line.startsWith('• ') || line.startsWith('- ')) {
+          return <div key={i} className="flex gap-1"><span className="text-[#F59E0B] mt-0.5">•</span><span>{line.slice(2)}</span></div>;
+        }
+        if (line.startsWith('**') && line.endsWith('**')) {
+          return <div key={i} className="font-semibold text-white">{line.slice(2, -2)}</div>;
+        }
+        if (line.startsWith('# ')) {
+          return <div key={i} className="font-bold text-[#F59E0B]">{line.slice(2)}</div>;
+        }
+        // inline bold
+        const bolded = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        const italics = bolded.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        return line ? (
+          <p key={i} dangerouslySetInnerHTML={{ __html: italics }} />
+        ) : (
+          <br key={i} />
+        );
+      })}
     </div>
   );
 }
