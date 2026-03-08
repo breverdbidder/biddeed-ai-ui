@@ -42,7 +42,7 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
       onClick={(e) => {
         // Don't navigate if clicking an inner link
         if ((e.target as HTMLElement).closest('a')) return;
-        router.push(`/biddeed-ai-ui/property/?id=${auction.id}`);
+        router.push(`/property/?id=${auction.id}`);
       }}
       className={cn(
         'bg-slate-800 rounded-xl border-l-4 overflow-hidden shadow-lg',
