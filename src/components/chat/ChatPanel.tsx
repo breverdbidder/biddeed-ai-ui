@@ -1,10 +1,15 @@
 'use client';
 // src/components/chat/ChatPanel.tsx
-// BidDeed.AI Chat — wired to /api/chat with Claude Sonnet SSE streaming
+// CP-13: BidDeed.AI Chat — wired to client-side intelligence engine
+// Queries LIVE Supabase data loaded by useAuctions hook
+// PropertyOnion has ZERO NLP chat — this is BidDeed.AI EXCLUSIVE
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Zap, Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuctions } from '@/hooks/useAuctions';
+import { processQuery } from '@/lib/chat-intelligence';
+import type { AuctionWithIntel } from '@/lib/chat-intelligence';
 
 interface Message {
   id: string;
@@ -15,111 +20,73 @@ interface Message {
 const WELCOME: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `👋 **BidDeed.AI Intelligence** — Powered by Claude Sonnet
+  content: `👋 **BidDeed.AI Intelligence** — Live Data Chat
 
-I have live access to Brevard County foreclosure data across 126 active properties.
+I have **real-time access** to Brevard County foreclosure data. Every answer comes from live Supabase queries — not canned responses.
 
 Ask me anything:
 • *"Show BID signals"* — active high-probability opportunities
 • *"Next auction dates"* — upcoming Brevard auctions
 • *"Analyze case 250697"* — full deal analysis
-• *"Is 32937 a good market?"* — ZIP-level macro context
-• *"Max bid formula explained"* — investment methodology`,
+• *"32937 market"* — ZIP-level macro context
+• *"Summary"* — portfolio overview
+• *"Max bid formula"* — investment methodology`,
 };
 
 const SUGGESTED = [
   'Show BID signals',
   'Next auction dates',
-  'REVIEW properties',
-  'Pipeline status',
+  'Summary',
+  'Max bid formula',
 ];
 
 export function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Live auction data from Supabase
+  const { enriched } = useAuctions();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Update welcome message with live count
+  useEffect(() => {
+    if (enriched.length > 0) {
+      setMessages(prev => prev.map(m =>
+        m.id === 'welcome'
+          ? { ...m, content: m.content.replace(/foreclosure data\./, `foreclosure data across **${enriched.length} active properties**.`) }
+          : m
+      ));
+    }
+  }, [enriched.length]);
+
   const send = async (text: string) => {
     if (!text.trim() || loading) return;
-    setError(null);
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text };
-    const assistantId = (Date.now() + 1).toString();
-    const assistantMsg: Message = { id: assistantId, role: 'assistant', content: '' };
-
-    setMessages((prev) => [...prev, userMsg, assistantMsg]);
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
-    // Build history (exclude welcome + current empty assistant)
-    const history = [...messages.slice(1), userMsg].map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    // Simulate brief "thinking" delay for natural feel
+    await new Promise(r => setTimeout(r, 400 + Math.random() * 600));
 
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history }),
-      });
+    // Query the intelligence engine with live data
+    const result = processQuery(text, enriched as AuctionWithIntel[]);
 
-      if (!res.ok) {
-        throw new Error(`API error: ${res.status}`);
-      }
+    const assistantMsg: Message = {
+      id: (Date.now() + 1).toString(),
+      role: 'assistant',
+      content: result.text,
+    };
 
-      if (!res.body) throw new Error('No response body');
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') break;
-          try {
-            const { text, error: chunkError } = JSON.parse(data);
-            if (chunkError) throw new Error(chunkError);
-            if (text) {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, content: m.content + text } : m
-                )
-              );
-            }
-          } catch {
-            // malformed chunk — skip
-          }
-        }
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      setError(msg);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId
-            ? { ...m, content: `❌ Error: ${msg}\n\nCheck that ANTHROPIC_API_KEY is configured in Cloudflare Pages.` }
-            : m
-        )
-      );
-    } finally {
-      setLoading(false);
-    }
+    setMessages(prev => [...prev, assistantMsg]);
+    setLoading(false);
   };
 
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -131,7 +98,6 @@ export function ChatPanel() {
 
   const resetChat = () => {
     setMessages([WELCOME]);
-    setError(null);
   };
 
   return (
@@ -141,6 +107,11 @@ export function ChatPanel() {
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-[#F59E0B]" />
           <span className="text-sm font-semibold text-white">BidDeed Intelligence</span>
+          {enriched.length > 0 && (
+            <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-mono">
+              LIVE · {enriched.length}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {loading && <Loader2 className="w-3.5 h-3.5 text-[#F59E0B] animate-spin" />}
@@ -166,23 +137,26 @@ export function ChatPanel() {
                   : 'bg-[#0f172a] text-slate-200 rounded-bl-sm border border-slate-800'
               )}
             >
-              {m.content === '' && loading ? (
-                <span className="flex items-center gap-1 text-slate-500">
-                  <span className="w-1.5 h-1.5 bg-[#F59E0B] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-1.5 h-1.5 bg-[#F59E0B] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-[#F59E0B] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </span>
-              ) : (
-                <MessageContent content={m.content} />
-              )}
+              <MessageContent content={m.content} />
             </div>
           </div>
         ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-[#0f172a] rounded-xl px-3 py-2 border border-slate-800">
+              <span className="flex items-center gap-1 text-slate-500">
+                <span className="w-1.5 h-1.5 bg-[#F59E0B] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-[#F59E0B] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-[#F59E0B] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </span>
+            </div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
-      {/* Suggested prompts (only when no user messages yet) */}
-      {messages.length === 1 && (
+      {/* Suggested prompts */}
+      {messages.length <= 2 && (
         <div className="px-4 pb-2 flex flex-wrap gap-2">
           {SUGGESTED.map((s) => (
             <button
@@ -223,37 +197,37 @@ export function ChatPanel() {
           </button>
         </div>
         <p className="text-[10px] text-slate-600 mt-1.5 text-center">
-          Live Brevard data · Claude Sonnet · Enter to send
+          Live Brevard data · {enriched.length} properties · Enter to send
         </p>
       </div>
     </div>
   );
 }
 
-// Simple markdown-ish renderer
 function MessageContent({ content }: { content: string }) {
   const parts = content.split('\n');
   return (
     <div className="space-y-1">
       {parts.map((line, i) => {
         if (line.startsWith('• ') || line.startsWith('- ')) {
-          return <div key={i} className="flex gap-1"><span className="text-[#F59E0B] mt-0.5">•</span><span>{line.slice(2)}</span></div>;
-        }
-        if (line.startsWith('**') && line.endsWith('**')) {
-          return <div key={i} className="font-semibold text-white">{line.slice(2, -2)}</div>;
+          return <div key={i} className="flex gap-1"><span className="text-[#F59E0B] mt-0.5">•</span><span>{formatInline(line.slice(2))}</span></div>;
         }
         if (line.startsWith('# ')) {
-          return <div key={i} className="font-bold text-[#F59E0B]">{line.slice(2)}</div>;
+          return <div key={i} className="font-bold text-[#F59E0B] text-base mt-1">{line.slice(2)}</div>;
         }
-        // inline bold
-        const bolded = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        const italics = bolded.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        const formatted = formatInline(line);
         return line ? (
-          <p key={i} dangerouslySetInnerHTML={{ __html: italics }} />
+          <p key={i} dangerouslySetInnerHTML={{ __html: formatted }} />
         ) : (
           <br key={i} />
         );
       })}
     </div>
   );
+}
+
+function formatInline(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '<strong class="text-white">$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em class="text-slate-400">$1</em>');
 }
