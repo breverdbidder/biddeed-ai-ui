@@ -210,7 +210,7 @@ function MessageContent({ content }: { content: string }) {
     <div className="space-y-1">
       {parts.map((line, i) => {
         if (line.startsWith('• ') || line.startsWith('- ')) {
-          return <div key={i} className="flex gap-1"><span className="text-[#F59E0B] mt-0.5">•</span><span>{formatInline(line.slice(2))}</span></div>;
+          return <div key={i} className="flex gap-1"><span className="text-[#F59E0B] mt-0.5">•</span><span dangerouslySetInnerHTML={{ __html: formatInline(line.slice(2)) }} /></div>;
         }
         if (line.startsWith('# ')) {
           return <div key={i} className="font-bold text-[#F59E0B] text-base mt-1">{line.slice(2)}</div>;
