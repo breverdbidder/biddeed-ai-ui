@@ -36,9 +36,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Prevent flash: apply theme before render */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            try {
+              var t = localStorage.getItem('biddeed-theme') || 'light';
+              if (t === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.documentElement.setAttribute('data-theme', 'dark');
+              }
+            } catch(e) {}
+          })();
+        `}} />
+      </head>
       <body
-        className={`${GeistSans.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} font-body antialiased bg-slate-950 text-slate-100`}
+        className={`${GeistSans.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} font-body antialiased`}
       >
         {children}
       </body>
