@@ -2,182 +2,237 @@
 @tailwind components;
 @tailwind utilities;
 
-/* BidDeed.AI Design Tokens */
+/* ═══════════════════════════════════════════════════════════
+   BidDeed.AI Theme System — Light (default) + Dark
+   ═══════════════════════════════════════════════════════════ */
+
 :root {
   --radius: 0.5rem;
+  /* Light mode (default) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-input: #f1f5f9;
+  --bg-header: linear-gradient(to right, #f8fafc, #f1f5f9);
+  --bg-chat: #f8fafc;
+  --bg-panel: #ffffff;
+  --bg-hover: #e2e8f0;
+  --border-color: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  --accent: #1E3A5F;
+  --accent-light: #2563eb;
+  --orange: #F59E0B;
+  --surface-overlay: rgba(255, 255, 255, 0.8);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-hover: #94a3b8;
+}
+
+.dark {
+  --bg-primary: #020617;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #1e293b;
+  --bg-card: #0f172a;
+  --bg-input: #0f172a;
+  --bg-header: linear-gradient(to right, #0f172a, #1e293b);
+  --bg-chat: #020617;
+  --bg-panel: #020617;
+  --bg-hover: #1e293b;
+  --border-color: #334155;
+  --border-hover: #475569;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #020617;
+  --accent: #1E3A5F;
+  --accent-light: #60a5fa;
+  --surface-overlay: rgba(2, 6, 23, 0.8);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
+  --scrollbar-track: #0f172a;
+  --scrollbar-thumb: #334155;
+  --scrollbar-hover: #475569;
 }
 
 @layer base {
   * {
-    @apply border-slate-700;
+    border-color: var(--border-color);
   }
 
   body {
-    @apply bg-slate-950 text-slate-100;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
-  ::-webkit-scrollbar-track {
-    @apply bg-slate-900;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-slate-700 rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-600;
-  }
-
-  /* Financial data styling */
   .financial-value {
     font-variant-numeric: tabular-nums;
     @apply font-mono;
   }
 }
 
+/* ═══════════════════════════════════════════════════════════
+   Light Mode Overrides — remap dark utility classes
+   All bg-slate-*, bg-[#020617], bg-[#0f172a] etc get light equivalents
+   ═══════════════════════════════════════════════════════════ */
+
+/* Primary backgrounds */
+:root:not(.dark) .bg-slate-950,
+:root:not(.dark) .bg-\[\#020617\] {
+  background-color: #ffffff !important;
+}
+:root:not(.dark) .bg-slate-900,
+:root:not(.dark) .bg-\[\#0f172a\] {
+  background-color: #f8fafc !important;
+}
+:root:not(.dark) .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+}
+:root:not(.dark) .bg-slate-700 {
+  background-color: #e2e8f0 !important;
+}
+
+/* Header gradient */
+:root:not(.dark) .from-slate-900 { --tw-gradient-from: #f8fafc !important; }
+:root:not(.dark) .to-slate-800 { --tw-gradient-to: #f1f5f9 !important; }
+:root:not(.dark) .from-\[\#1E3A5F\]\/20 { --tw-gradient-from: rgba(30, 58, 95, 0.05) !important; }
+
+/* Text colors */
+:root:not(.dark) .text-white { color: #0f172a !important; }
+:root:not(.dark) .text-slate-100 { color: #1e293b !important; }
+:root:not(.dark) .text-slate-200 { color: #334155 !important; }
+:root:not(.dark) .text-slate-300 { color: #475569 !important; }
+:root:not(.dark) .text-slate-400 { color: #64748b !important; }
+:root:not(.dark) .text-slate-500 { color: #94a3b8 !important; }
+:root:not(.dark) .text-slate-600 { color: #64748b !important; }
+
+/* Borders */
+:root:not(.dark) .border-slate-700 { border-color: #e2e8f0 !important; }
+:root:not(.dark) .border-slate-800 { border-color: #e2e8f0 !important; }
+
+/* Input / Card surfaces */
+:root:not(.dark) .bg-\[\#0f172a\] { background-color: #f1f5f9 !important; }
+:root:not(.dark) .bg-\[\#1E3A5F\] { background-color: #1E3A5F !important; } /* Keep accent */
+:root:not(.dark) .bg-\[\#1E3A5F\]\/60 { background-color: rgba(30, 58, 95, 0.08) !important; }
+:root:not(.dark) .bg-\[\#1E3A5F\]\/20 { background-color: rgba(30, 58, 95, 0.06) !important; }
+
+/* Hover states */
+:root:not(.dark) .hover\:border-slate-600:hover { border-color: #94a3b8 !important; }
+:root:not(.dark) .hover\:text-white:hover { color: #0f172a !important; }
+:root:not(.dark) .hover\:text-slate-300:hover { color: #334155 !important; }
+
+/* Cards with shadows instead of dark bg */
+:root:not(.dark) [class*="rounded-xl"][class*="border-l-"] {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06) !important;
+}
+
+/* KPI cards */
+:root:not(.dark) [class*="rounded-lg"][class*="bg-slate-800"] {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Table */
+:root:not(.dark) tr { border-color: #f1f5f9 !important; }
+:root:not(.dark) .hover\:bg-slate-800\/30:hover { background-color: #f1f5f9 !important; }
+
+/* Chat panel */
+:root:not(.dark) .border-r { border-right-color: #e2e8f0 !important; }
+
+/* Chat user messages keep dark accent */
+:root:not(.dark) .bg-\[\#1E3A5F\] .text-white,
+:root:not(.dark) [class*="bg-[#1E3A5F]"] .text-white {
+  color: #ffffff !important;
+}
+
+/* Map tab controls */
+:root:not(.dark) .mapboxgl-ctrl button { background-color: #ffffff !important; }
+
+/* Pipeline + Agent cards */
+:root:not(.dark) .bg-slate-800\/50 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Fix chat bubble bg in light mode */
+:root:not(.dark) .rounded-bl-sm.border.border-slate-800 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Orange accent stays vibrant in both modes */
+:root:not(.dark) .text-\[\#F59E0B\] { color: #d97706 !important; }
+:root:not(.dark) .bg-\[\#F59E0B\] { background-color: #f59e0b !important; }
+:root:not(.dark) .border-\[\#F59E0B\] { border-color: #f59e0b !important; }
+
+/* Green/Red/Amber badges stay the same */
+:root:not(.dark) .text-green-400 { color: #16a34a !important; }
+:root:not(.dark) .text-red-400 { color: #dc2626 !important; }
+:root:not(.dark) .text-amber-400 { color: #d97706 !important; }
+
+/* Smooth transitions */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+/* Exclude transform transitions from affecting animations */
+button, a, [role="tab"] {
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform;
+}
+
 @layer components {
-  /* Decision badges */
-  .decision-bid {
-    @apply bg-green-500/20 border-green-500 text-green-400;
-  }
-
-  .decision-review {
-    @apply bg-amber-500/20 border-amber-500 text-amber-400;
-  }
-
-  .decision-skip {
-    @apply bg-red-500/20 border-red-500 text-red-400;
-  }
-
-  /* Agent status */
-  .agent-active {
-    @apply bg-purple-500/20 border-purple-500 text-purple-400;
-  }
-
-  .agent-completed {
-    @apply bg-green-500/20 border-green-500 text-green-400;
-  }
-
-  .agent-pending {
-    @apply bg-slate-700/50 border-slate-600 text-slate-400;
-  }
-
-  /* Pipeline stages */
-  .stage-running {
-    @apply bg-blue-500/20 border-blue-500;
-  }
-
-  .stage-completed {
-    @apply bg-green-500/20 border-green-500;
-  }
-
-  /* Glass effect */
-  .glass {
-    @apply bg-slate-800/50 backdrop-blur-sm;
-  }
-
-  /* Gradient text */
-  .gradient-text {
-    @apply bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent;
-  }
+  .decision-bid { @apply bg-green-500/20 border-green-500 text-green-400; }
+  .decision-review { @apply bg-amber-500/20 border-amber-500 text-amber-400; }
+  .decision-skip { @apply bg-red-500/20 border-red-500 text-red-400; }
+  .agent-active { @apply bg-purple-500/20 border-purple-500 text-purple-400; }
+  .agent-completed { @apply bg-green-500/20 border-green-500 text-green-400; }
+  .agent-pending { @apply bg-slate-700/50 border-slate-600 text-slate-400; }
+  .stage-running { @apply bg-blue-500/20 border-blue-500; }
+  .stage-completed { @apply bg-green-500/20 border-green-500; }
+  .glass { @apply bg-slate-800/50 backdrop-blur-sm; }
+  .gradient-text { @apply bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent; }
 }
 
 @layer utilities {
-  /* Gradient animation for progress bars */
   @keyframes gradient {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
+  .animate-gradient { animation: gradient 2s ease infinite; }
 
-  .animate-gradient {
-    animation: gradient 2s ease infinite;
-  }
-
-  /* Pulse animation for active agents */
   @keyframes pulse-ring {
-    0% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1.5);
-      opacity: 0;
-    }
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
   }
+  .animate-pulse-ring { animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
 
-  .animate-pulse-ring {
-    animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-  }
-
-  /* Typewriter effect */
   @keyframes typewriter {
-    from {
-      width: 0;
-    }
-    to {
-      width: 100%;
-    }
+    from { width: 0; }
+    to { width: 100%; }
   }
+  .typewriter { overflow: hidden; white-space: nowrap; animation: typewriter 2s steps(40) forwards; }
 
-  .typewriter {
-    overflow: hidden;
-    white-space: nowrap;
-    animation: typewriter 2s steps(40) forwards;
-  }
-
-  /* Fade in animation */
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-fadeIn {
-    animation: fadeIn 0.3s ease-out forwards;
-  }
-
-  /* Slide in from right */
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  .animate-slideInRight {
-    animation: slideInRight 0.3s ease-out forwards;
-  }
-
-  /* Hide scrollbar utility */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
