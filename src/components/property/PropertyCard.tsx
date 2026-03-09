@@ -51,8 +51,8 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
         borderColor,
         className,
       )}>
-      {/* ── Photo ── */}
-      <div className="relative h-44 bg-slate-900">
+      {/* ── Photo: Mapbox Satellite from lat/lng (BCPAO scraped coordinates) ── */}
+      <div className="relative h-44 bg-slate-900 dark:bg-slate-900">
         {/* CP-10: Auction Status Badge */}
         {auction.auction_status === 'sold' && (
           <div className="absolute top-2 left-14 z-20 bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded font-mono shadow-lg">
@@ -64,20 +64,20 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
             CANCELLED
           </div>
         )}
-        {auction.photo_url ? (
+        {auction.latitude && auction.longitude ? (
           <>
+            {/* Mapbox Satellite aerial — uses our scraped BCPAO coordinates */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={auction.photo_url}
+              src={`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${auction.longitude},${auction.latitude},17,0/400x250@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? ''}`}
               alt={shortAddress}
-              className="absolute inset-0 w-full h-full object-cover brightness-75"
+              className="absolute inset-0 w-full h-full object-cover brightness-90"
               loading="lazy"
               onError={(e) => {
-                // CP-02: Fallback on BCPAO hotlink block
                 const target = e.currentTarget;
                 target.style.display = 'none';
-                const fallback = target.nextElementSibling;
-                if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                const fb = target.nextElementSibling;
+                if (fb) (fb as HTMLElement).style.display = 'flex';
               }}
             />
             <div className="w-full h-full items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-[#1E3A5F]/40 hidden">
@@ -85,7 +85,7 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
             </div>
           </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-navy/40">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-[#1E3A5F]/30">
             <Home className="w-10 h-10 text-slate-600" />
           </div>
         )}
