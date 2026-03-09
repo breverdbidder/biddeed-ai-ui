@@ -1,5 +1,5 @@
 // src/hooks/useAuth.ts
-// CP-15: Supabase Auth hook — login, signup, session management
+// CP-15: Supabase Auth hook — safe initialization with error boundaries
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -16,32 +16,53 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email ?? '',
-          name: session.user.user_metadata?.full_name ?? session.user.email?.split('@')[0],
-        });
+    let mounted = true;
+    
+    // Safe session check — never throw during hydration
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email ?? '',
+            name: session.user.user_metadata?.full_name ?? session.user.email?.split('@')[0],
+          });
+        }
+      } catch {
+        // Auth not available — silent fail, user stays null
+      } finally {
+        if (mounted) setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+    
+    checkSession();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email ?? '',
-          name: session.user.user_metadata?.full_name ?? session.user.email?.split('@')[0],
-        });
-      } else {
-        setUser(null);
-      }
-    });
+    // Safe listener
+    let subscription: { unsubscribe: () => void } | null = null;
+    try {
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!mounted) return;
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email ?? '',
+            name: session.user.user_metadata?.full_name ?? session.user.email?.split('@')[0],
+          });
+        } else {
+          setUser(null);
+        }
+      });
+      subscription = data.subscription;
+    } catch {
+      // Silent fail
+    }
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
