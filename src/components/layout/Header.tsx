@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Zap, Calendar, Bell, User, ChevronDown, LogOut } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthModal } from '@/components/auth/AuthModal';
 
@@ -47,6 +48,8 @@ export function Header() {
               timeZone: 'America/New_York',
             }).replace(' ', '\u00a0')}
           </span>
+
+          <ThemeToggle />
 
           <button className="relative text-slate-400 hover:text-white transition-colors">
             <Bell className="w-4 h-4" />
