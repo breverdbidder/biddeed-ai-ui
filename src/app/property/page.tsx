@@ -8,8 +8,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { computeIntelligence, formatDollar, formatDate } from '@/lib/auction-intelligence';
 import type { AuctionRow, AuctionIntelligence } from '@/lib/supabase/types';
+import { LienSearch } from '@/components/property/LienSearch';
 import { generatePropertyReport } from '@/lib/report-generator';
-import { ArrowLeft, ExternalLink, Home, MapPin, Gavel, TrendingUp, Brain, Calendar, DollarSign, FileDown } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Home, MapPin, Gavel, TrendingUp, Brain, Calendar, DollarSign, FileDown, Shield } from 'lucide-react';
 
 function PropertyDetailInner() {
   const params = useSearchParams();
@@ -17,7 +18,7 @@ function PropertyDetailInner() {
   const id = params.get('id');
   const [row, setRow] = useState<AuctionRow | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'summary' | 'valuation' | 'auction' | 'intel'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'valuation' | 'auction' | 'intel' | 'liens'>('summary');
 
   useEffect(() => {
     if (!id) return;
