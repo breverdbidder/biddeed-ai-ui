@@ -15,7 +15,7 @@ export function SplitScreenLayout() {
       <PanelGroup direction="horizontal" className="flex-1">
         {/* Chat Panel */}
         <Panel
-          defaultSize={35}
+          defaultSize={25}
           minSize={25}
           maxSize={50}
           className="bg-slate-900"
@@ -27,7 +27,7 @@ export function SplitScreenLayout() {
         <PanelResizeHandle className="w-1 bg-slate-700 hover:bg-blue-500 transition-colors cursor-col-resize data-[resize-handle-active]:bg-blue-500" />
 
         {/* Intelligence Panel */}
-        <Panel defaultSize={65} minSize={40} className="bg-slate-950">
+        <Panel defaultSize={75} minSize={40} className="bg-slate-950">
           <IntelligencePanel />
         </Panel>
       </PanelGroup>
