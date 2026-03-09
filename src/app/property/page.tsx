@@ -64,6 +64,7 @@ function PropertyDetailInner() {
     { id: 'valuation' as const, label: 'Valuation', icon: TrendingUp },
     { id: 'auction' as const, label: 'Auction Info', icon: Gavel },
     { id: 'intel' as const, label: 'AI Intelligence', icon: Brain },
+    { id: 'liens' as const, label: 'Liens', icon: Shield },
   ];
 
   return (
@@ -216,6 +217,17 @@ function PropertyDetailInner() {
               <Row label="AcclaimWeb" value={row.acclaimweb_url ? 'Search Liens' : '—'} link={row.acclaimweb_url} />
               <Row label="BCPAO" value={row.bcpao_url ? 'View Parcel' : '—'} link={row.bcpao_url} />
             </Section>
+          </div>
+        )}
+
+        {activeTab === 'liens' && row && (
+          <div className="max-w-5xl">
+            <LienSearch
+              ownerName={row.plaintiff ?? 'Unknown'}
+              caseNumber={row.case_number ?? undefined}
+              plaintiff={row.plaintiff ?? undefined}
+              parcelId={row.parcel_id ?? undefined}
+            />
           </div>
         )}
 
