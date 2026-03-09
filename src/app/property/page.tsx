@@ -8,7 +8,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { computeIntelligence, formatDollar, formatDate } from '@/lib/auction-intelligence';
 import type { AuctionRow, AuctionIntelligence } from '@/lib/supabase/types';
-import { ArrowLeft, ExternalLink, Home, MapPin, Gavel, TrendingUp, Brain, Calendar, DollarSign } from 'lucide-react';
+import { generatePropertyReport } from '@/lib/report-generator';
+import { ArrowLeft, ExternalLink, Home, MapPin, Gavel, TrendingUp, Brain, Calendar, DollarSign, FileDown } from 'lucide-react';
 
 function PropertyDetailInner() {
   const params = useSearchParams();
@@ -81,6 +82,12 @@ function PropertyDetailInner() {
           <span className={`px-2.5 py-1 rounded border text-xs font-bold ${recColor}`}>
             {intel.recommendation} {intel.mlScore}%
           </span>
+          <button
+              onClick={() => row && intel && generatePropertyReport(row, intel)}
+              className="flex items-center gap-1 text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded hover:text-white transition-colors"
+            >
+              <FileDown className="w-3 h-3" /> Report
+            </button>
           {sourceUrl && (
             <a href={sourceUrl} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs text-[#F59E0B] hover:text-amber-300">
