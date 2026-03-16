@@ -1,173 +1,45 @@
-# CLAUDE.md — Shapira Agentic Stack
+# CLAUDE.md — BidDeed.AI / Everest Capital USA
 
-## Engineering Methodology (Superpowers)
-Read and follow `SUPERPOWERS.md` for verification gates, systematic debugging, code review, testing anti-patterns, and YAGNI enforcement.
-Source: [breverdbidder/superpowers](https://github.com/breverdbidder/superpowers) (forked from obra/superpowers v4.3.1, MIT)
+## Who I Am
+Ariel Shapira. Solo founder of BidDeed.AI and Everest Capital USA. 10+ years foreclosure investing in Brevard County, Florida. Licensed FL broker and general contractor. Building an AI-powered foreclosure auction intelligence platform. ADHD — I need systems that run themselves.
 
-> Root directive for all Claude Code sessions. Read this first. Always.
+## My Stack
+- **Repos:** github.com/breverdbidder/* (cli-anything-biddeed, zonewise-scraper-v4, biddeed-ai, biddeed-ai-ui, zonewise-web, cliproxy-gateway, tax-insurance-optimizer)
+- **Database:** Supabase (mocerqjnksmhcjzxrewo.supabase.co) — multi_county_auctions (245K rows), activities, insights, daily_metrics
+- **Compute:** Hetzner everest-dispatch (87.99.129.125) with CLIProxyAPI on 127.0.0.1:8317
+- **AI:** Gemini Flash (FREE via CLIProxyAPI), DeepSeek V3.2 ($0.28/1M), Claude (Max plan, never API)
+- **Deploy:** GitHub Actions + Cloudflare Pages + Render
+- **Brand:** Navy #1E3A5F, Orange #F59E0B, Inter font, bg #020617
 
-## Identity
+## Context Rules
 
-- **Product Owner:** Ariel Shapira (20 min/day oversight max)
-- **AI Architect:** Claude AI (autonomous decisions, no permission needed)
-- **Agentic Engineer:** Claude Code (7-hour sessions, zero human-in-loop)
-- **Repo owner:** breverdbidder (GitHub)
+When I mention an auction or property → query Supabase `multi_county_auctions` first
+When I mention a case number → search `multi_county_auctions` by case_number field
+When analyzing a deal → apply max bid formula: (ARV×70%)-Repairs-$10K-MIN($25K,15%×ARV)
+When I ask about pipeline health → check `daily_metrics` and recent GitHub Action runs
+When I mention a county → check if config exists in `counties/` before assuming anything
+When something needs building → follow cli-anything HARNESS.md 7-phase pattern
+When deploying code → push to GitHub, never local installs or Google Drive
+When spending money → stop and confirm if >$10/session
+When I context-switch mid-task → flag it: "📌 [previous task] is still open"
+When I say "Summit" → execute immediately, no questions, no clarification
 
-## Active Repos
+## How I Work
+- Direct, no softening language. Facts and actions.
+- Cost discipline: $10/session max. Batch operations. One attempt per approach.
+- Zero HITL: try 3 alternatives before surfacing a blocker.
+- Execute first, report results. Don't ask what to do.
+- Push back with strong opinions when you disagree.
+- Wrong = "I was wrong." Never invent numbers.
 
-| Repo | Purpose | Deploy |
-|------|---------|--------|
-| `breverdbidder/brevard-bidder-scraper` | BidDeed.AI — auction pipeline | Render.com |
-| `breverdbidder/zonewise-agents` | ZoneWise — 67-county scraper agents | Render.com |
-| `breverdbidder/zonewise-web` | ZoneWise — marketing site | Vercel / Cloudflare Pages |
-| `breverdbidder/zonewise-desktop` | ZoneWise — desktop app | Electron |
-| `breverdbidder/context-boot-mcp-server` | Context boot MCP | npm |
+## Slash Commands
+- `/auction-brief` — morning auction briefing from Supabase
+- `/county-setup` — onboard a new Florida county
+- `/deal-intel` — process foreclosure documents into structured data
+- `/tldr` — end-of-session summary, updates memory.md
+- `/transcript` — YouTube video analysis via Hetzner pipeline
 
-## Tech Stack
-
-- **Runtime:** Node.js 20 / Python 3.11
-- **Framework:** Next.js 15 (App Router), FastAPI
-- **Database:** Supabase (Postgres) — `mocerqjnksmhcjzxrewo.supabase.co`
-- **ORM:** Drizzle (JS) / SQLAlchemy (Python)
-- **Auth:** Supabase Auth
-- **Hosting:** Render.com (backend), Cloudflare Pages (frontend), Vercel (zonewise-web)
-- **Orchestration:** LangGraph (multi-agent), GitHub Actions (CI/CD)
-- **LLM Routing:** LiteLLM Smart Router
-- **Browser Testing:** agent-browser (Vercel)
-- **Unit Testing:** Vitest (JS), Pytest (Python)
-
-## Commands
-
-```bash
-npm run dev          # Start dev server (port 3000)
-npm run build        # Production build
-npm run test         # Vitest unit tests (watch)
-npm run test:run     # Vitest once
-npm run test:e2e     # E2E with agent-browser
-npm run lint         # Biome lint
-npm run db:push      # Push Drizzle schema to Supabase
-npm run db:studio    # Drizzle Studio
-
-python -m pytest     # Python unit tests
-uvicorn app.main:app --reload --port 8000  # FastAPI dev
-```
-
-## Project Structure (BidDeed.AI)
-
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── (auth)/            # Login/signup
-│   ├── (dashboard)/       # Main app
-│   └── api/               # API routes
-├── agents/                # LangGraph agent definitions
-├── scrapers/              # County auction scrapers
-├── lib/                   # Shared utilities
-└── types/                 # TypeScript types
-
-.github/workflows/         # GitHub Actions (nightly pipeline, deploy)
-scripts/                   # Standalone utility scripts
-```
-
-## Key Supabase Tables
-
-| Table | Purpose |
-|-------|---------|
-| `multi_county_auctions` | All auction records (67 counties) |
-| `historical_auctions` | Processed + analyzed auctions |
-| `insights` | Agent run logs, errors, decisions |
-| `claude_context_checkpoints` | Context boot MCP checkpoints |
-| `master_index` | Single source of truth for all repos/files |
-
-## Environment Variables (check `.env.example`)
-
-```
-SUPABASE_URL=https://mocerqjnksmhcjzxrewo.supabase.co
-SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-DATABASE_URL=postgresql://...   # Direct Postgres URL for psql
-GITHUB_PAT=<from-github-secrets>
-```
-
-## Coding Conventions
-
-- **TypeScript:** strict mode, no `any`
-- **Naming:** camelCase (JS/TS), snake_case (Python/SQL)
-- **Error handling:** always log to `insights` table with `status=ERROR`
-- **DB writes:** use service role key, never anon key for inserts
-- **Commits:** `feat:`, `fix:`, `chore:`, `docs:` prefixes
-- **Never:** hardcode API keys, use Google Drive, create ZIP files
-
-## Autonomous Rules
-
-### Execute Without Asking:
-- Bug fixes, refactors, optimizations
-- GitHub Actions deployments
-- Supabase read queries
-- Test creation and runs
-- Documentation updates
-- Dependency updates
-- Git commits and pushes
-
-### Always Surface to Ariel:
-- Spend >$10 on new services
-- Production schema changes (migrations)
-- Delete production data
-- New third-party integrations (first time)
-- Security / auth changes
-
-### Escalation Format:
-```
-BLOCKED: [issue]. Tried: [3 attempts]. Recommend: [solution]. Approve?
-```
-
-## TODO.md Protocol (MANDATORY)
-
-Before ANY project task:
-1. Load `TODO.md` from GitHub
-2. Find current unchecked task
-3. Execute + verify
-4. Mark `[x]` and push
-
-## Shabbat Awareness
-
-- No human availability Friday sunset → Saturday havdalah (Satellite Beach FL, 32937)
-- Automated tasks continue unattended during Shabbat — this is fine
-- Outputs queue for Havdalah review
-
-
-## Debugging with DAP
-
-**ALWAYS use `dap` instead of print-statement debugging.** The `dap` CLI wraps the Debug Adapter Protocol for surgical debugging.
-
-### Setup (auto-install if missing)
-```bash
-which dap || curl -fsSL https://raw.githubusercontent.com/AlmogBaku/debug-skill/master/install.sh | bash
-```
-
-### When to use
-- Program crashes or raises unexpected exceptions
-- Wrong output and root cause isn't obvious from stack trace
-- Data flows through multiple functions/files (pipeline bugs)
-- Print-debugging would require 3+ iterations
-
-### Quick reference
-```bash
-dap debug script.py --break script.py:42     # breakpoint at line 42
-dap debug script.py --break-on-exception raised  # catch all exceptions
-dap eval "len(items)"                         # inspect live state
-dap step                                      # step over
-dap step in                                   # step into function
-dap step out                                  # return to caller
-dap continue                                  # next breakpoint
-dap stop                                      # end session
-```
-
-### Debugging mindset
-1. Form hypothesis: "I believe the bug is in X because Y"
-2. Set breakpoint upstream of where error manifests
-3. Inspect locals and call stack at each stop
-4. Confirm or refute hypothesis, adjust breakpoint
-5. Fix only after understanding root cause
-
-Full skill docs: `skills/debugging-code/SKILL.md`
+## Family Context (when relevant)
+- Wife Mariam: runs Property360 real estate, Protection Partners insurance, contracting
+- Son Michael (16): D1 competitive swimmer, Satellite Beach HS, keto diet, Shabbat observance
+- Orthodox practices: Shabbat (no work Fri sunset–Sat havdalah), kosher, holidays
