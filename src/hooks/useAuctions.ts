@@ -3,6 +3,7 @@
 // Live Supabase hook: fetches multi_county_auctions for upcoming Brevard auctions
 
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { computeIntelligence } from '@/lib/auction-intelligence';
 import type { AuctionRow, AuctionIntelligence } from '@/lib/supabase/types';
@@ -30,7 +31,13 @@ const DEFAULT_FILTERS: FilterState = {
   sort: 'DATE',
 };
 
-export function useAuctions(county = 'brevard') {
+export function useAuctions(countyOverride?: string) {
+  // County resolution (descending priority):
+  //   1. explicit prop override   (e.g. useAuctions('pinellas'))
+  //   2. URL param ?county=...    (e.g. /?county=pinellas — for D4D field testing across counties)
+  //   3. default 'brevard'        (home base)
+  const searchParams = useSearchParams();
+  const county = (countyOverride ?? searchParams?.get('county') ?? 'brevard').toLowerCase();
   const [rows, setRows] = useState<AuctionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
