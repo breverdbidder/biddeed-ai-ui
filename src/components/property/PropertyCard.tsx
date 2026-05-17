@@ -10,6 +10,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { DecisionBadge } from './DecisionBadge';
 import { formatDollar, formatDate } from '@/lib/auction-intelligence';
 import type { AuctionWithIntel } from '@/hooks/useAuctions';
+import { AddToRouteButton } from '@/components/d4d/AddToRouteButton';
 
 interface PropertyCardProps {
   auction: AuctionWithIntel;
@@ -105,6 +106,9 @@ export function PropertyCard({ auction, className }: PropertyCardProps) {
         <div className="absolute top-2 right-2">
           <DecisionBadge decision={recommendation} confidence={mlScore} size="sm" />
         </div>
+
+        {/* D4D add-to-route button (only renders when D4D mode is enabled) */}
+        <AddToRouteButton auction={auction} />
 
         {/* Days countdown */}
         {daysUntilAuction != null && daysUntilAuction >= 0 && (
