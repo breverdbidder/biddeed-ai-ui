@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { GeistSans } from 'geist/font/sans';
 import './globals.css';
+import { RoutePanel } from '@/components/d4d/RoutePanel';
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -55,6 +56,7 @@ export default function RootLayout({
         className={`${GeistSans.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} font-body antialiased`}
       >
         {children}
+        <RoutePanel />
       </body>
     </html>
   );
